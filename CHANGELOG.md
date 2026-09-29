@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `vpos view`: one-page brain viewer — dashboard (summary, stats, context + architecture diagrams, recent changes), metadata chips, collapsed long tables, click-to-zoom diagrams, page search, light/dark.
+- `vpos view`: one-page brain viewer — dashboard (summary, stats, context + architecture diagrams, recent changes), metadata chips, collapsed long tables, interactive diagrams (zoom, drag, full screen; walk through sequence diagrams step by step with ← →; click a flowchart box to trace its links), page search, light/dark.
 - Writing budget in `AGENTS.md` (diagrams first, ≤ 12-word cells, ≤ 8-row tables); shorter templates (−44% words); condensed example.
 
 ## 0.1.0 — 2026-09-29

@@ -68,12 +68,7 @@
   .timeline > :first-child { border-top: 0; }
   .timeline a:hover { background: var(--accent-soft); text-decoration: none; }
   .timeline time { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .home .diagram svg { max-height: 420px; width: auto; }
-  .diagram { cursor: zoom-in; position: relative; }
-  .diagram::after { content: "⤢"; position: absolute; top: 8px; right: 12px; color: #9aa0ab; font-size: 14px; }
-  .zoom { position: fixed; inset: 0; z-index: 50; background: rgba(10,12,16,.72); display: flex; padding: 3vh 3vw; cursor: zoom-out; }
-  .zoom > div { background: #fff; border-radius: 14px; overflow: auto; margin: auto; max-width: 100%; max-height: 100%; padding: 24px; }
-  .zoom svg { max-width: none !important; height: auto; display: block; }
+  .home .stage svg { max-height: 420px; }
   tr.hidden { display: none; }
   .morerows { display: block; width: 100%; border: 0; border-top: 1px solid var(--line); background: var(--panel); color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; padding: 8px; cursor: pointer; }
 
@@ -110,9 +105,35 @@
   details.more > summary::-webkit-details-marker { display: none; }
   details.more > summary::before { content: "▸"; transition: transform .15s; }
   details.more[open] > summary::before { transform: rotate(90deg); }
-  .diagram { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin: 14px 0 18px; overflow-x: auto; text-align: center; box-shadow: var(--shadow); }
-  .diagram svg { max-width: 100%; height: auto; }
-  .diagram.err { text-align: left; color: #c92a2a; font-size: 13px; }
+  /* interactive diagrams (always on white so Mermaid colours stay readable) */
+  .diagram { background: #fff; color: #16181d; border: 1px solid var(--line); border-radius: 14px; margin: 14px 0 18px; box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+  .diagram.err { padding: 16px; color: #c92a2a; font-size: 13px; display: block; }
+  .dtools { display: flex; gap: 6px; align-items: center; justify-content: flex-end; padding: 8px 10px; border-bottom: 1px solid #eeece6; background: #fbfaf7; flex-wrap: wrap; }
+  .dtools button { min-width: 30px; height: 28px; padding: 0 9px; border: 1px solid #e3e0d8; border-radius: 7px; background: #fff; color: #16181d; font: 600 13px Inter, sans-serif; cursor: pointer; }
+  .dtools button:hover:not(:disabled) { border-color: #2563eb; color: #2563eb; }
+  .dtools button:disabled { opacity: .35; cursor: default; }
+  .dtools .step { font: 600 12.5px Inter, sans-serif; color: #6b6f78; min-width: 58px; text-align: center; font-variant-numeric: tabular-nums; }
+  .dtools .stepper { display: flex; gap: 6px; align-items: center; margin-right: auto; }
+  .stage { padding: 16px; text-align: center; }
+  .stage svg { width: 100%; height: auto; max-height: 70vh; cursor: grab; touch-action: none; user-select: none; }
+  .stage svg.grabbing { cursor: grabbing; }
+  .caption { padding: 9px 14px; border-top: 1px solid #eeece6; background: #fbfaf7; font-size: 13px; color: #4b5059; min-height: 38px; line-height: 1.5; }
+  .caption b { color: #16181d; } .caption em { color: #6b6f78; font-style: normal; }
+  .diagram.full { position: fixed; inset: 12px; z-index: 60; margin: 0; box-shadow: 0 0 0 100vmax rgba(10,12,16,.6); }
+  .diagram.full .stage { flex: 1; min-height: 0; display: flex; }
+  .diagram.full .stage svg { max-height: none; height: 100%; }
+  body.noscroll { overflow: hidden; }
+  /* flowchart tracing */
+  svg.dim g.node, svg.dim path.flowchart-link, svg.dim g.edgeLabel, svg.dim g.cluster { opacity: .14; transition: opacity .15s; }
+  svg.dim .hl { opacity: 1 !important; }
+  svg.dim g.node.hl-root rect, svg.dim g.node.hl-root polygon, svg.dim g.node.hl-root path, svg.dim g.node.hl-root circle { stroke: #2563eb !important; stroke-width: 3px !important; }
+  svg.dim path.flowchart-link.hl { stroke: #2563eb !important; stroke-width: 2.5px !important; }
+  /* sequence stepping */
+  svg.seq-dim .messageText, svg.seq-dim .messageLine0, svg.seq-dim .messageLine1 { opacity: .12; transition: opacity .15s; }
+  svg.seq-dim .seen { opacity: .45 !important; }
+  svg.seq-dim .cur { opacity: 1 !important; }
+  svg.seq-dim line.cur, svg.seq-dim path.cur { stroke: #2563eb !important; stroke-width: 3px !important; }
+  svg.seq-dim text.cur { fill: #2563eb !important; font-weight: 700 !important; }
   .dead { border-bottom: 1px dotted var(--muted); }
   .folder { display: grid; gap: 10px; }
 
@@ -210,24 +231,160 @@ async function renderDiagrams(scope) {
     const box = document.createElement('div');
     box.className = 'diagram';
     (code.closest('pre') || code).replaceWith(box);
-    try { box.innerHTML = (await mermaid.render(`m${seq++}`, code.textContent)).svg; }
-    catch (e) { box.classList.add('err'); box.textContent = `Diagram error: ${e.message || e}`; }
+    try {
+      const { svg } = await mermaid.render(`m${seq++}`, code.textContent);
+      box.innerHTML = `<div class="dtools"></div><div class="stage">${svg}</div><div class="caption"></div>`;
+      interactive(box);
+    } catch (e) { box.classList.add('err'); box.textContent = `Diagram error: ${e.message || e}`; }
   }
 }
-// Click a diagram to see it at full size.
-document.addEventListener('click', (e) => {
-  const box = e.target.closest('.diagram:not(.err)');
-  if (!box || box.closest('.zoom')) return;
-  const svg = box.querySelector('svg').cloneNode(true);
-  const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+
+// ---- interactive diagrams: zoom / pan / full screen, step through sequences, trace flowchart links ----
+let activeBox = null;
+function interactive(box) {
+  const svg = box.querySelector('svg');
+  const tools = box.querySelector('.dtools');
+  const caption = box.querySelector('.caption');
+  const vb0 = (svg.getAttribute('viewBox') || '0 0 100 100').split(/[\s,]+/).map(Number);
+  let vb = [...vb0];
+  const setVb = () => svg.setAttribute('viewBox', vb.join(' '));
+  const zoom = (f, cx = vb[0] + vb[2] / 2, cy = vb[1] + vb[3] / 2) => {
+    const w = Math.min(Math.max(vb[2] * f, vb0[2] / 8), vb0[2] * 1.5), k = w / vb[2];
+    vb = [cx - (cx - vb[0]) * k, cy - (cy - vb[1]) * k, w, vb[3] * k]; setVb();
+  };
+  const fit = () => { vb = [...vb0]; setVb(); };
+  const toPoint = (e) => { const r = svg.getBoundingClientRect(), s = Math.max(vb[2] / r.width, vb[3] / r.height);
+    return [vb[0] + (e.clientX - r.left - (r.width - vb[2] / s) / 2) * s, vb[1] + (e.clientY - r.top - (r.height - vb[3] / s) / 2) * s]; };
   svg.removeAttribute('style');
-  if (vb[2]) svg.setAttribute('width', Math.max(vb[2] * 1.25, Math.min(vb[2] * 2, innerWidth * 0.9)));
-  const z = document.createElement('div'); z.className = 'zoom';
-  const inner = document.createElement('div'); inner.appendChild(svg); z.appendChild(inner);
-  z.onclick = () => z.remove();
-  document.body.appendChild(z);
+
+  const btn = (label, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = label; b.title = title;
+    b.onclick = (e) => { e.stopPropagation(); activeBox = box; fn(); }; tools.appendChild(b); return b; };
+  btn('−', 'Zoom out', () => zoom(1.25));
+  btn('+', 'Zoom in', () => zoom(0.8));
+  btn('Fit', 'Reset view', fit);
+  const fsBtn = btn('⛶', 'Full screen (Esc to close)', () => toggleFull());
+  const toggleFull = (force) => {
+    const on = force ?? !box.classList.contains('full');
+    box.classList.toggle('full', on); document.body.classList.toggle('noscroll', on);
+    fsBtn.innerHTML = on ? '✕' : '⛶'; fit();
+  };
+  box.toggleFull = toggleFull;
+
+  // Drag to pan; Ctrl/⌘ + wheel (or any wheel in full screen) to zoom.
+  let drag = null;
+  svg.addEventListener('pointerdown', (e) => { activeBox = box; drag = { x: e.clientX, y: e.clientY, vb: [...vb], moved: false, target: e.target }; svg.setPointerCapture(e.pointerId); });
+  svg.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const r = svg.getBoundingClientRect(), s = Math.max(vb[2] / r.width, vb[3] / r.height);
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+    if (drag.moved) { vb[0] = drag.vb[0] - dx * s; vb[1] = drag.vb[1] - dy * s; setVb(); svg.classList.add('grabbing'); }
+  });
+  // Pointer capture retargets pointerup to the <svg>, so tap handling uses the pointerdown target.
+  svg.addEventListener('pointerup', () => { const d = drag; drag = null; svg.classList.remove('grabbing'); if (d && !d.moved) onTap({ target: d.target }); });
+  svg.addEventListener('wheel', (e) => {
+    if (!box.classList.contains('full') && !e.ctrlKey && !e.metaKey) return;
+    e.preventDefault(); const [px, py] = toPoint(e); zoom(e.deltaY > 0 ? 1.12 : 0.89, px, py);
+  }, { passive: false });
+  svg.addEventListener('dblclick', () => toggleFull());
+
+  let onTap = () => {};
+  if (svg.querySelector('.messageText')) onTap = sequenceSteps(svg, tools, caption, (x, y) => {
+    if (vb[2] < vb0[2] * 0.95) { vb[0] = x - vb[2] / 2; vb[1] = y - vb[3] / 2; setVb(); }
+  });
+  else if (svg.querySelector('g.node')) onTap = traceLinks(svg, caption);
+  else caption.textContent = 'Drag to move · Ctrl + scroll to zoom · double-click for full screen';
+}
+
+function sequenceSteps(svg, tools, caption, centerOn) {
+  const texts = [...svg.querySelectorAll('.messageText')];
+  const lines = [...svg.querySelectorAll('.messageLine0, .messageLine1')];
+  const steps = texts.map((t, i) => ({ t, l: lines[i] })).filter((s) => s.l);
+  const actors = [];
+  svg.querySelectorAll('text.actor').forEach((a) => {
+    const b = a.getBBox(), name = a.textContent.trim();
+    const prev = actors.find((x) => x.name === name);
+    if (!prev) actors.push({ name, x: b.x + b.width / 2, y: b.y }); else if (b.y < prev.y) Object.assign(prev, { x: b.x + b.width / 2, y: b.y });
+  });
+  const near = (x) => actors.reduce((best, a) => (Math.abs(a.x - x) < Math.abs(best.x - x) ? a : best), actors[0] || { name: '?', x: 0 }).name;
+  const ends = (l) => {
+    if (l.tagName === 'line') return [+l.getAttribute('x1'), +l.getAttribute('x2')];
+    const m = (l.getAttribute('d') || '').match(/-?[\d.]+/g) || [0]; return [+m[0], +m[0]];
+  };
+  let i = -1;
+  const counter = document.createElement('span'); counter.className = 'step';
+  const prev = document.createElement('button'), next = document.createElement('button');
+  prev.type = next.type = 'button'; prev.innerHTML = '◀'; next.innerHTML = 'Step ▶'; prev.title = 'Previous step (←)'; next.title = 'Next step (→)';
+  const stepper = document.createElement('span'); stepper.className = 'stepper';
+  stepper.append(prev, counter, next); tools.prepend(stepper);
+  const show = () => {
+    svg.classList.toggle('seq-dim', i >= 0);
+    steps.forEach((s, k) => { for (const el of [s.t, s.l]) { el.classList.toggle('cur', k === i); el.classList.toggle('seen', k < i); } });
+    counter.textContent = i < 0 ? `${steps.length} steps` : `${i + 1} / ${steps.length}`;
+    next.innerHTML = i < 0 ? 'Walk through ▶' : '▶';
+    prev.disabled = i < 0; next.disabled = i >= steps.length - 1;
+    if (i < 0) { caption.textContent = 'Press “Walk through” (or →) to follow the flow one step at a time.'; return; }
+    const s = steps[i], [a, b] = ends(s.l);
+    caption.innerHTML = `<b>${i + 1}.</b> ${esc(near(a))} → ${esc(near(b))}: <span>${esc(s.t.textContent)}</span>`;
+    const bb = s.l.getBBox(); centerOn(bb.x + bb.width / 2, bb.y + bb.height / 2);
+  };
+  const go = (d) => { i = Math.max(-1, Math.min(steps.length - 1, i + d)); show(); };
+  prev.onclick = (e) => { e.stopPropagation(); activeBox = svg.closest('.diagram'); go(-1); };
+  next.onclick = (e) => { e.stopPropagation(); activeBox = svg.closest('.diagram'); go(1); };
+  svg.closest('.diagram').step = go;
+  show();
+  return () => {};
+}
+
+function traceLinks(svg, caption) {
+  const idOf = (g) => ((g.id || '').match(/flowchart-(.+)-\d+$/) || [])[1];
+  const nodes = new Map([...svg.querySelectorAll('g.node')].map((g) => [idOf(g), g]).filter(([k]) => k));
+  // First line of the node label (labels are HTML inside foreignObject; <br> separates lines).
+  const labelOf = (id) => {
+    const g = nodes.get(id), el = g?.querySelector('foreignObject div, foreignObject span');
+    return ((el ? el.innerText : g?.textContent) || id).split('\n')[0].replace(/\s+/g, ' ').trim();
+  };
+  const edges = [...svg.querySelectorAll('path.flowchart-link')].map((p) => {
+    const raw = (p.getAttribute('data-id') || p.id.replace(/^.*?-(L_)/, '$1')).replace(/^L_/, '').replace(/_\d+$/, '');
+    let from, to;
+    for (let k = raw.indexOf('_'); k > 0; k = raw.indexOf('_', k + 1)) {
+      if (nodes.has(raw.slice(0, k)) && nodes.has(raw.slice(k + 1))) { from = raw.slice(0, k); to = raw.slice(k + 1); break; }
+    }
+    const label = svg.querySelector(`g.label[data-id="${p.getAttribute('data-id')}"]`)?.closest('g.edgeLabel');
+    return { p, from, to, label, text: (label?.textContent || '').trim() };
+  }).filter((e) => e.from);
+  const hint = 'Click a box to trace what it connects to · drag to move · double-click for full screen';
+  caption.textContent = hint;
+  const clear = () => { svg.classList.remove('dim'); svg.querySelectorAll('.hl').forEach((el) => el.classList.remove('hl')); caption.textContent = hint; };
+  return (e) => {
+    const g = e.target.closest('g.node');
+    const id = g && idOf(g);
+    if (!id || g.classList.contains('hl-root')) { svg.querySelectorAll('.hl-root').forEach((x) => x.classList.remove('hl-root')); return clear(); }
+    clear(); svg.classList.add('dim'); g.classList.add('hl', 'hl-root');
+    const outM = new Map(), inM = new Map();
+    for (const ed of edges) {
+      if (ed.from !== id && ed.to !== id) continue;
+      ed.p.classList.add('hl'); ed.label?.classList.add('hl');
+      const other = ed.from === id ? ed.to : ed.from; nodes.get(other)?.classList.add('hl');
+      const m = ed.from === id ? outM : inM;
+      if (!m.has(other)) m.set(other, []);
+      if (ed.text) m.get(other).push(ed.text);
+    }
+    const fmt = (m) => [...m].map(([o, t]) => `${esc(labelOf(o))}${t.length ? ` <em>(${esc(t.join('; '))})</em>` : ''}`);
+    const out = fmt(outM), inn = fmt(inM);
+    caption.innerHTML = `<b>${esc(labelOf(id))}</b>` +
+      (out.length ? ` → ${out.join(', ')}` : '') + (inn.length ? `<br>← from ${inn.join(', ')}` : '') + (!out.length && !inn.length ? ' has no links' : '');
+  };
+}
+
+addEventListener('keydown', (e) => {
+  if (e.target.closest?.('input, textarea')) return;
+  const full = document.querySelector('.diagram.full');
+  if (e.key === 'Escape' && full) return full.toggleFull(false);
+  // Arrow keys drive the diagram in full screen, else the last one used, else the first sequence on the page.
+  const box = full || (activeBox?.isConnected && activeBox.step ? activeBox : document.querySelector('.stepper')?.closest('.diagram'));
+  if (box?.step && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); box.step(e.key === 'ArrowRight' ? 1 : -1); }
 });
-addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.zoom')?.remove(); });
 function resolve(from, href) {
   const parts = from.split('/').slice(0, -1);
   for (const seg of href.split('/')) { if (seg === '..') parts.pop(); else if (seg && seg !== '.') parts.push(seg); }
