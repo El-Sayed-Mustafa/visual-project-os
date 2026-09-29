@@ -140,6 +140,7 @@ Zero dependencies, Node 18+.
 | `vpos adr "<title>"` | Create the next numbered ADR. |
 | `vpos check [dir]` | Validate the brain (see below). |
 | `vpos check --since origin/main` | Also fail if code changed without a brain update (for CI). |
+| `vpos view [dir] [--out brain.html]` | Render the whole brain as one browsable HTML page (sidebar, stats, live diagrams). |
 
 `check` reports:
 
@@ -186,7 +187,7 @@ Mermaid CLI).
 - [ ] `vpos impact`: draft an impact map from `git diff` and `architecture.md`
 - [ ] Full Mermaid syntax validation via `@mermaid-js/mermaid-cli` (opt-in)
 - [ ] D2 / Structurizr export
-- [ ] Static site: browse a project's brain as a single page
+- [x] `vpos view`: browse a project's brain as a single page
 
 ## Contributing
 

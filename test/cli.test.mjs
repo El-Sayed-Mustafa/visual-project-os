@@ -105,6 +105,20 @@ test('check warns about referenced code paths that no longer exist', () => {
   assert.doesNotMatch(r.out, /`src\/app\.js`/);
 });
 
+test('view renders the brain into one self-contained HTML page', () => {
+  const dir = tmp();
+  run(['init', dir, '--name', 'Viewer <Demo>'], dir);
+  const out = path.join(dir, 'brain.html');
+  assert.equal(run(['view', dir, '--out', out], dir).code, 0);
+  const html = fs.readFileSync(out, 'utf8');
+  const data = JSON.parse(html.match(/<script id="data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  assert.equal(data.name, 'Viewer <Demo>');
+  const paths = data.files.map((f) => f.path);
+  assert.ok(paths.includes('architecture.md'));
+  assert.ok(!paths.some((p) => p.startsWith('prompts/') || p.includes('_template')));
+  assert.doesNotMatch(html.match(/<script id="data"[\s\S]*?<\/script>/)[0].slice(40, -9), /<\/?script/i);
+});
+
 test('check --since fails when code changed without a brain update', () => {
   const dir = tmp();
   const g = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });

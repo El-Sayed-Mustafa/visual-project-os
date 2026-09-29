@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --line: #e6e6e3;
+    --accent: #2b6cb0; --accent-soft: #e8f0fb; --code-bg: #f1f1ee; --side: #fbfbfa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141416; --panel: #1c1c1f; --text: #ececef; --muted: #9a9aa2; --line: #2c2c31;
+      --accent: #7ab3f5; --accent-soft: #1f2a38; --code-bg: #232327; --side: #18181a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141416; --panel: #1c1c1f; --text: #ececef; --muted: #9a9aa2; --line: #2c2c31;
+    --accent: #7ab3f5; --accent-soft: #1f2a38; --code-bg: #232327; --side: #18181a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 Inter, system-ui, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .layout { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  aside { background: var(--side); border-right: 1px solid var(--line); padding: 20px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .brand { font-weight: 700; font-size: 16px; margin: 0 6px 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin: 0 6px 18px; }
+  .group { margin: 16px 6px 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  nav a { display: block; padding: 5px 8px; border-radius: 6px; color: var(--text); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  nav a:hover { background: var(--accent-soft); text-decoration: none; }
+  nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  main { padding: 32px 48px 80px; max-width: 1100px; width: 100%; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 8px 0 28px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: 12.5px; }
+  article h1 { font-size: 28px; line-height: 1.25; margin: 0 0 12px; }
+  article h2 { font-size: 20px; margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  article h3 { font-size: 16px; margin: 24px 0 8px; }
+  article blockquote { margin: 12px 0; padding: 6px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; color: var(--text); }
+  article blockquote p { margin: 4px 0; }
+  code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12.5px; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--panel); }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  .diagram { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin: 14px 0; overflow-x: auto; text-align: center; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram.err { text-align: left; color: #c92a2a; font-size: 13px; }
+  .folder a { display: block; padding: 10px 14px; margin: 8px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .dead { border-bottom: 1px dotted var(--muted); }
+  .toolbar { position: fixed; top: 12px; right: 16px; }
+  .toolbar button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; }
+    main { padding: 20px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar"><button id="theme" type="button">Theme</button></div>
+<div class="layout">
+  <aside><div class="brand" id="brand"></div><div class="sub" id="gen"></div><nav id="nav"></nav></aside>
+  <main><div id="stats"></div><article id="doc">Loading…</article></main>
+</div>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const files = new Map(DATA.files.map((f) => [f.path, f.md]));
+document.title = `${DATA.name} — project brain`;
+document.getElementById('brand').textContent = DATA.name;
+document.getElementById('gen').textContent = `project brain · generated ${DATA.generated}`;
+
+// Theme toggle (per viewer, optional)
+const root = document.documentElement;
+try { const t = localStorage.getItem('vpos-theme'); if (t) root.dataset.theme = t; } catch {}
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+document.getElementById('theme').onclick = () => {
+  root.dataset.theme = isDark() ? 'light' : 'dark';
+  try { localStorage.setItem('vpos-theme', root.dataset.theme); } catch {}
+  show();
+};
+
+// Navigation
+const GROUPS = [
+  ['Overview', (p) => !p.includes('/')],
+  ['Flows', (p) => p.startsWith('flows/')],
+  ['Features', (p) => p.startsWith('features/')],
+  ['Decisions', (p) => p.startsWith('decisions/')],
+];
+const ORDER = ['README.md', 'system-overview.md', 'architecture.md', 'data-model.md', 'integrations.md', 'deployment.md', 'feature-history.md'];
+const titleOf = (p) => ((files.get(p) || '').match(/^#\s+(.+)$/m) || [, p])[1].replace(/\s+—\s+.*$/, '').replace(/^Flow:\s*/, '');
+const nav = document.getElementById('nav');
+for (const [label, test] of GROUPS) {
+  let paths = DATA.files.map((f) => f.path).filter(test);
+  if (!paths.length) continue;
+  paths.sort((a, b) => label === 'Overview' ? ORDER.indexOf(a) - ORDER.indexOf(b) : label === 'Features' ? b.localeCompare(a) : a.localeCompare(b));
+  nav.insertAdjacentHTML('beforeend', `<div class="group">${label} · ${paths.length}</div>`);
+  for (const p of paths) {
+    const a = document.createElement('a');
+    a.href = `#/${p}`;
+    a.textContent = p === 'README.md' ? 'Start here' : titleOf(p);
+    a.dataset.path = p;
+    nav.appendChild(a);
+  }
+}
+
+// Stats
+const count = (re) => DATA.files.filter((f) => re.test(f.path)).length;
+const diagrams = DATA.files.reduce((n, f) => n + (f.md.match(/^```mermaid/gm) || []).length, 0);
+const statsHtml = [
+  [diagrams, 'diagrams'], [count(/^flows\//), 'flows'], [count(/^features\//), 'feature records'],
+  [count(/^decisions\//), 'decisions (ADRs)'], [((files.get('feature-history.md') || '').match(/^\| \d{4}-/gm) || []).length, 'history entries'],
+].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+function resolve(from, href) {
+  const parts = from.split('/').slice(0, -1);
+  for (const seg of href.split('/')) {
+    if (seg === '..') parts.pop(); else if (seg && seg !== '.') parts.push(seg);
+  }
+  return parts.join('/') + (href.endsWith('/') ? '/' : '');
+}
+
+let seq = 0;
+async function show() {
+  const path = decodeURIComponent(location.hash.replace(/^#\//, '')) || 'README.md';
+  document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('active', a.dataset.path === path));
+  document.getElementById('stats').innerHTML = path === 'README.md' ? `<div class="stats">${statsHtml}</div>` : '';
+  const doc = document.getElementById('doc');
+
+  if (path.endsWith('/')) {
+    const items = DATA.files.map((f) => f.path).filter((p) => p.startsWith(path)).sort();
+    doc.innerHTML = `<h1>${path}</h1><div class="folder">${items.map((p) => `<a href="#/${p}">${titleOf(p)}</a>`).join('') || '<p>Empty.</p>'}</div>`;
+    return;
+  }
+  const md = files.get(path);
+  if (md === undefined) { doc.innerHTML = `<h1>Not found</h1><p>${path}</p>`; return; }
+
+  doc.innerHTML = marked.parse(md.replace(/<!--[\s\S]*?-->/g, ''));
+  // Metadata tables use an empty header row (`| | |`); hide it.
+  doc.querySelectorAll('thead').forEach((h) => { if (!h.textContent.trim()) h.remove(); });
+  doc.querySelectorAll('table').forEach((t) => { const w = document.createElement('div'); w.className = 'table-wrap'; t.replaceWith(w); w.appendChild(t); });
+
+  // Links: brain files stay in the viewer; anything else (code paths) is shown as text.
+  doc.querySelectorAll('a[href]').forEach((a) => {
+    const href = a.getAttribute('href');
+    if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return;
+    const target = resolve(path, href.split('#')[0]);
+    if (files.has(target) || (target.endsWith('/') && DATA.files.some((f) => f.path.startsWith(target)))) a.setAttribute('href', `#/${target}`);
+    else { const s = document.createElement('span'); s.className = 'dead'; s.title = href; s.textContent = a.textContent; a.replaceWith(s); }
+  });
+
+  mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'strict', fontFamily: 'Inter, system-ui, sans-serif' });
+  for (const code of doc.querySelectorAll('code.language-mermaid')) {
+    const box = document.createElement('div');
+    box.className = 'diagram';
+    code.parentElement.replaceWith(box);
+    try { box.innerHTML = (await mermaid.render(`m${seq++}`, code.textContent)).svg; }
+    catch (e) { box.classList.add('err'); box.textContent = `Diagram error: ${e.message || e}`; }
+  }
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', show);
+show();
+</script>
+</body>
+</html>

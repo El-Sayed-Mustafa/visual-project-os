@@ -4,8 +4,10 @@
 //   vpos feature "<title>" [--dir .] [--type feature]
 //   vpos adr "<title>" [--dir .]
 //   vpos check [dir] [--since <git-ref>] [--strict]
+//   vpos view [dir] [--out brain.html]
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -330,6 +332,28 @@ function check(args) {
   return report(dir, findings);
 }
 
+// ---------- view ----------
+function view(args) {
+  const dir = path.resolve(args._[0] || '.');
+  requireBrain(dir);
+  const name = typeof args.name === 'string' ? args.name : brainName(dir);
+  const files = walk(path.join(dir, BRAIN))
+    .filter((f) => f.endsWith('.md') && !f.startsWith('prompts/') && !/(^|\/)_template\.md$/.test(f))
+    .map((f) => ({ path: f, md: fs.readFileSync(path.join(dir, BRAIN, f), 'utf8') }));
+  const data = JSON.stringify({ name, generated: today(), files }).replace(/</g, '\\u003c');
+  const html = fs.readFileSync(path.join(ROOT, 'bin/view.html'), 'utf8').replace('/*__DATA__*/', () => data);
+  const out = path.resolve(typeof args.out === 'string' ? args.out : path.join(os.tmpdir(), `vpos-${slugify(name)}.html`));
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, html);
+  console.log(`${c.green('wrote')} ${out}  ${c.dim(`(${files.length} pages — open it in a browser)`)}`);
+}
+
+function brainName(dir) {
+  const readme = path.join(dir, BRAIN, 'README.md');
+  const m = fs.existsSync(readme) && fs.readFileSync(readme, 'utf8').match(/^#\s+Project brain\s+—\s+(.+)$/m);
+  return m ? m[1].trim() : projectName(dir);
+}
+
 function report(dir, findings) {
   const errors = findings.filter((f) => f.level === 'error');
   const warns = findings.filter((f) => f.level === 'warn');
@@ -353,6 +377,7 @@ Usage:
   vpos adr "<title>" [--dir .]               create the next numbered ADR
   vpos check [dir] [--since <ref>] [--strict]
                                              validate structure, diagrams, links, drift
+  vpos view [dir] [--out brain.html]         render the brain as one browsable HTML page
 
 Options:
   --ci       also add a GitHub Action + PR template that run "check" on pull requests
@@ -367,6 +392,7 @@ switch (cmd) {
   case 'feature': feature(args); break;
   case 'adr': adr(args); break;
   case 'check': check(args); break;
+  case 'view': view(args); break;
   case '-v': case '--version': console.log(PKG.version); break;
   case undefined: case '-h': case '--help': case 'help': console.log(HELP); break;
   default: console.log(HELP); die(`unknown command: ${cmd}`);
