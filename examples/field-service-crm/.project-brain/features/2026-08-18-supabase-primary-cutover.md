@@ -9,17 +9,15 @@
 
 ## Change summary
 
-- The operational database moved from the bound Google Sheet to Supabase Postgres (`crm_*` tables).
-- Sheets-shaped helpers (`readTable_`, `appendRows_`, `updateRow_`) now route to Postgres through `SupabasePrimary.js`.
-- The browser calls the Edge Function `crm-api` directly for most reads and writes. Apps Script is the read fallback and the Google side-effect worker.
-- Google side effects (email, contacts) moved to an outbox drained every minute.
-- Sheets is frozen as a recovery snapshot.
+- Operational data moved from the bound Sheet to Supabase Postgres (`crm_*`).
+- `readTable_` / `appendRows_` / `updateRow_` route to Postgres via `SupabasePrimary.js`.
+- Browser calls Edge `crm-api` directly; Apps Script = read fallback + worker.
+- Google side effects moved to a 1-min outbox; Sheets frozen as snapshot.
 
 ## Problem
 
 Full-sheet reads, ScriptLock waits and Apps Script round-trips made every screen
-slow once thousands of historical rows were imported. Money needed relational
-integrity and triggers.
+slow after the import. Money needed relational integrity and triggers.
 
 ## Before
 
@@ -49,47 +47,35 @@ flowchart LR
   classDef removed fill:#ffe3e3,stroke:#c92a2a,color:#5c1a1a,stroke-dasharray:4 3
 ```
 
-Sheets is shown as removed from the live path; it still exists as a frozen snapshot.
-
-## Flow
-
-See [create appointment](../flows/create-appointment.md) and
-[technician visit report](../flows/technician-visit-report.md) for the new paths.
+Sheets: off the live path, kept as frozen snapshot. New paths: [create appointment](../flows/create-appointment.md), [visit report](../flows/technician-visit-report.md).
 
 ## Files touched
 
 | File | Change |
 | --- | --- |
-| `Supabase.js` | added: PostgREST/RPC client, parity checks, dual-write tests |
-| `SupabasePrimary.js` | added: sheet→table adapter, backup queue |
+| `Supabase.js`, `SupabasePrimary.js` | added: PostgREST/RPC client, parity tests, sheet→table adapter |
 | `FastApi.js` | added: Edge URL and client config |
-| **supabase/functions/crm-api/index.ts** | added: Edge API with auth, allow-lists, business logic |
+| **supabase/functions/crm-api/index.ts** | added: Edge API (auth, allow-lists, business logic) |
 | **supabase/migrations/001_crm_schema.sql** | added: base schema |
-| `Utils.js` | changed: table helpers route to Postgres when primary; IDs via `crm_reserve_ids` |
-| `Config.js` | changed: `SUPABASE_*` per-domain flags, `SUPABASE_PRIMARY_DATABASE` |
-| `Script.html`, `TechnicianScript.html` | changed: `apiDirect` / `techFastRequest` transport, localStorage cache |
+| `Utils.js`, `Config.js` | changed: helpers route to Postgres; `SUPABASE_*` flags; `crm_reserve_ids` |
+| `Script.html`, `TechnicianScript.html` | changed: `apiDirect` / `techFastRequest`, localStorage cache |
 | `DeferredMaintenance.js` | added: outbox worker |
 
 ## Data impact
 
-All tabs mapped 1:1 to `crm_*` tables with snake_case columns, plus
-`source_row`, `source_payload`, `source_system`, `record_updated_at`. New
-`crm_sync_outbox`, `crm_id_counters`. The last Sheets-only Apps Script version
-was recorded as the rollback baseline before cutover.
+Tabs → `crm_*` tables 1:1 plus `source_*` columns; new `crm_sync_outbox`, `crm_id_counters`; last Sheets-only version kept as rollback baseline.
 
 ## Edge cases and failure modes
 
 | Case | Behaviour |
 | --- | --- |
 | Edge down | Reads fall back to Apps Script; writes fail visibly |
-| Parity mismatch during staged cutover | Domain flag stays on Sheets until `compare*Sources` passes |
-| Worker stops | Emails and contacts queue up in the outbox |
+| Parity mismatch during cutover | Domain flag stays on Sheets until `compare*Sources` passes |
+| Worker stops | Emails and contacts queue in the outbox |
 
 ## Test notes
 
-Staged per domain with parity tests; results were kept in a migration test
-report. Performance was measured with `testFastOperationsAudit` /
-`testBookingAndReportWritePerformance` (`PerformanceAudit.js`).
+Staged per domain with parity tests; speed measured by `testFastOperationsAudit` / `testBookingAndReportWritePerformance` (`PerformanceAudit.js`).
 
 ## Brain docs updated
 

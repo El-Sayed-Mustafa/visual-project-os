@@ -4,18 +4,13 @@
 
 ## Where data lives
 
-| Store | Technology | What it holds |
-| --- | --- | --- |
-| Supabase Postgres (primary) | ~30 `crm_*` tables, RLS on, no anon grants, `security definer` RPCs, money triggers | All operational data since the 2026-08-18 cutover |
-| Google Sheets (bound spreadsheet) | 15 tabs, headers in `Config.js` → `HEADERS` | **Frozen snapshot** (`CONFIG.SHEETS_BACKUP_ENABLED: false`) |
-| Google Drive | One folder per appointment under the CRM files folder | Report photos, voice notes, signatures, call recordings |
-| Script Properties | key/value | Secrets and small job queues (`CRM_APPOINTMENT_JOB_*`, `PAID_VISIT_CONTACT_*`, `CRM_LAST_ID_*`) |
-| Browser `localStorage` | 6 h cache | Read results in `LOCAL_READ_FUNCTIONS` |
-
-`SupabasePrimary.js` → `supabaseSheetMeta_` maps every sheet header to a
-snake_case column, so Sheets-shaped code (`readTable_`, `appendRows_`,
-`updateRow_`) still works against Postgres. Every table carries `source_row`,
-`source_payload`, `source_system` and `record_updated_at` (touch trigger).
+| Store | What it holds |
+| --- | --- |
+| Supabase Postgres (primary) | ~30 `crm_*` tables; RLS, no anon grants, `security definer` RPCs, money triggers |
+| Google Sheets (15 tabs) | **Frozen snapshot** (`CONFIG.SHEETS_BACKUP_ENABLED: false`) |
+| Google Drive | Folder per appointment: photos, voice notes, signatures, recordings |
+| Script Properties | Secrets + small queues (`CRM_APPOINTMENT_JOB_*`, `PAID_VISIT_CONTACT_*`, `CRM_LAST_ID_*`) |
+| Browser `localStorage` | 6 h cache of `LOCAL_READ_FUNCTIONS` results |
 
 ## Core operations
 
@@ -112,26 +107,30 @@ erDiagram
   }
 ```
 
-## Calling campaigns, complaints, platform
+## Other tables
 
 | Table | Purpose |
 | --- | --- |
 | `crm_call_groups` → `crm_call_batches` → `crm_call_tasks` → `crm_call_log` | Calling campaigns (unique `phone_digits` per task) |
 | `crm_call_log_inbox` | Android call-log intake (Edge `call-log`) |
-| `crm_complaints`, `crm_complaints_deleted`, `crm_complaint_rules` | Complaints linked to report / visit / booked appointment |
+| `crm_complaints`, `crm_complaints_deleted`, `crm_complaint_rules` | Complaints linked to report, visit or booking |
 | `crm_warranty_rules`, `crm_service_aliases` | Warranty months per service |
-| `crm_settings` | Lists (services, areas, statuses…) as category/value rows |
-| `crm_office_users` | Office accounts: role, `password_hash`, `session_version`, `pages text[]` |
-| `crm_activity_log` | Audit of writes and sign-ins |
+| `crm_settings` | Lists (services, areas, statuses) as category/value rows |
+| `crm_office_users`, `crm_activity_log` | Accounts (role, `session_version`, `pages text[]`); audit log |
 | `crm_sync_outbox` | Google side-effect jobs (unique `event_key`), drained every minute |
-| `crm_id_counters` | Backs RPC `crm_reserve_ids` (IDs like `APPT…`, `RPT…`) |
-| `crm_idempotency_keys` | Created but **unused** |
+| `crm_id_counters`, `crm_idempotency_keys` | RPC `crm_reserve_ids` (`APPT…`, `RPT…`); idempotency **unused** |
 
-## Lifecycles
+## Notes
 
-Appointment status follows the visit report (`VISIT_TO_APPOINTMENT_STATUS` in
-`Config.js`). Visit statuses were reduced to two states
-(`migrateVisitStatusesToTwoStates` in `Setup.js`).
+| Topic | Detail |
+| --- | --- |
+| Adapter | `supabaseSheetMeta_` maps sheet headers to snake_case columns |
+| Source columns | `source_row`, `source_payload`, `source_system`, `record_updated_at` on every table |
+| Status sync | `VISIT_TO_APPOINTMENT_STATUS`; two visit states (`migrateVisitStatusesToTwoStates`) |
+| Migrations | `001_crm_schema.sql` … `085_lead_history.sql`, by hand, each with "TO UNDO" |
+| History table | Empty — **never `supabase db push`** |
+
+## Appointment lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -141,9 +140,3 @@ stateDiagram-v2
   NotCompleted --> Scheduled: rebooked
   Completed --> [*]
 ```
-
-## Migrations and changes
-
-- Schema lives in **supabase/migrations/** — `001_crm_schema.sql` … `085_lead_history.sql`.
-- Applied **by hand** with the migration runner script; each file has a "TO UNDO" note.
-- The Supabase migration-history table is empty, so **never run `supabase db push`**.

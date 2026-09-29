@@ -2,22 +2,19 @@
 
 > Last reviewed: {{DATE}}
 
-## Where data lives
+## Stores
 
-| Store | Technology | What it holds |
-| --- | --- | --- |
-| TODO(vpos) | e.g. Postgres, Google Sheets, JSON files | |
+| Store | Holds |
+| --- | --- |
+| TODO(vpos) | |
 
-## Entities and relationships
-
-<!-- Only real tables / collections / sheets and real column names. -->
+## Entities
 
 ```mermaid
 erDiagram
   CUSTOMER ||--o{ ORDER : places
   CUSTOMER {
     string id PK
-    string name
   }
   ORDER {
     string id PK
@@ -26,29 +23,17 @@ erDiagram
   }
 ```
 
-## Entity notes
+## Notes
 
-### TODO(vpos): entity name
+| Entity | Written by | Rules |
+| --- | --- | --- |
+| TODO(vpos) | | |
 
-- **Stored in:** table / file / sheet name
-- **Key:** how rows are identified
-- **Written by:** which components create or update it
-- **Read by:** which components read it
-- **Rules:** invariants, allowed statuses, retention
-
-## Lifecycles
-
-<!-- Optional: statuses that an entity moves through. -->
+## Lifecycle
 
 ```mermaid
 stateDiagram-v2
   [*] --> draft
   draft --> active
   active --> closed
-  closed --> [*]
 ```
-
-## Migrations and changes
-
-Schema changes are recorded in [feature history](feature-history.md) and, when
-they are decisions, in [decisions/](decisions/).

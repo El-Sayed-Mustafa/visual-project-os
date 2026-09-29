@@ -1,8 +1,8 @@
 # Flow: WhatsApp lead intake
 
-**Trigger:** time trigger every 10 min (or the Green API webhook).
-**Outcome:** every unknown WhatsApp number becomes one lead; known numbers are marked as existing customers.
-**Entry point:** `GreenApiLeads.js` → `pullGreenApiLeadsOnSchedule`
+**Trigger:** time trigger every 10 min (or Green API webhook).
+**Outcome:** each unknown number → one lead; known numbers marked existing customers.
+**Entry:** `GreenApiLeads.js` → `pullGreenApiLeadsOnSchedule`
 
 ```mermaid
 sequenceDiagram
@@ -22,16 +22,16 @@ sequenceDiagram
 
 ## Steps
 
-1. `extractGreenApiUnknownLeads` pulls chats (limit `GREEN_API_PULL_LIMIT` 300).
-2. `importGreenApiChats_` normalises phones (country-code prefixes in local, `00` and `+` forms), dedupes, and upserts one lead per number.
-3. Office staff work the lead: call result, next follow-up, convert to customer, book.
-4. Alternative entry: the `doPost` webhook → `handleGreenApiWebhook_`.
-5. Repair tools: `mergeDuplicateLeads`, `assignLeadNumbers`, `repairLeadCustomerSync`.
+1. `extractGreenApiUnknownLeads` pulls chats (`GREEN_API_PULL_LIMIT` 300).
+2. `importGreenApiChats_` normalises phones (local, `00`, `+`), dedupes, upserts.
+3. Office works the lead: call result, follow-up, convert, book.
+4. Alt entry: `doPost` webhook → `handleGreenApiWebhook_`.
+5. Repair: `mergeDuplicateLeads`, `assignLeadNumbers`, `repairLeadCustomerSync`.
 
 ## Failure cases
 
-| Where | What can fail | What happens |
-| --- | --- | --- |
-| Trigger stopped / quota | No pulls | Messages older than 24 h are missed (`lastIncomingMessages` window) |
-| Auth change | Trigger owner lost access | Pull silently stops. Confirm it still runs (open item) |
-| Same person, two numbers | Two leads | Manual merge |
+| Where | What happens |
+| --- | --- |
+| Trigger stopped / quota | Messages older than 24 h missed |
+| Trigger owner lost access | Pull silently stops; confirm it runs (open item) |
+| Same person, two numbers | Two leads; manual merge |

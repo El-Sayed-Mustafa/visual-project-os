@@ -2,40 +2,29 @@
 
 > Last reviewed: {{DATE}}
 
-## Environments
-
-| Environment | Where it runs | URL / identifier | How it is released |
-| --- | --- | --- | --- |
-| Local | developer machine | | |
-| TODO(vpos) | | | |
-
-## Build and run
+## Commands
 
 ```bash
-# TODO(vpos): the exact commands to install, run locally and test
+# TODO(vpos): install, run, test, deploy
 ```
 
 ## Release flow
 
 ```mermaid
 flowchart LR
-  dev["Local change"] --> repo["Git push"]
-  repo --> ci["CI checks"]
-  ci --> prod["Production"]
+  dev["Change"] --> ci["Checks"] --> prod["Production"]
 ```
 
-## Configuration
+## Environments and config
 
-| Setting | Where it is set | Required | Notes |
-| --- | --- | --- | --- |
-| TODO(vpos) | env / file / console | yes/no | |
+| Item | Where | Notes |
+| --- | --- | --- |
+| TODO(vpos) | | |
 
-## Scheduled jobs and triggers
+## Jobs and triggers
 
-| Job | Schedule | Entry point | What it does |
-| --- | --- | --- | --- |
-| | | | |
+| Job | Schedule | Entry point |
+| --- | --- | --- |
+| | | |
 
-## Rollback
-
-TODO(vpos): how to go back to the previous version if a release breaks.
+**Rollback:** TODO(vpos)

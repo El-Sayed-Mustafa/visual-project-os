@@ -4,25 +4,16 @@
 | --- | --- |
 | **Date** | YYYY-MM-DD |
 | **Status** | proposed / accepted / superseded by ADR-NNNN / deprecated |
-| **Feature** | link to the feature record, or — |
+| **Feature** | link or — |
 
-## Context
+**Context:** the problem and constraints (≤ 3 sentences).
 
-The situation and the forces at play: requirements, constraints, what hurts
-today. Facts, not the answer yet.
+**Decision:** "We will …" (≤ 2 sentences).
 
-## Decision
+| Alternative | Why not |
+| --- | --- |
+| | |
 
-What we will do, stated plainly. "We will …"
-
-## Alternatives considered
-
-| Option | Pros | Cons | Why not |
-| --- | --- | --- | --- |
-| | | | |
-
-## Consequences
-
-- **Good:** what gets easier.
-- **Bad:** what gets harder, what we now have to maintain.
-- **Follow-ups:** work this decision creates.
+- **Good:** 
+- **Bad:** 
+- **Follow-ups:** 

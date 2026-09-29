@@ -1,86 +1,71 @@
 <!-- visual-project-os:start -->
 # Agent rules — Field Service CRM
 
-This project uses **visual-project-os**. The folder `.project-brain/` is the
-project's long-term memory: architecture, flows, data model, decisions and the
-history of every feature, with diagrams in Mermaid.
+`.project-brain/` is this project's visual memory. **The code says what the
+system does; the brain says how and why.** A change is done only when both are
+updated.
 
-**The code is the source of truth for behaviour. `.project-brain/` is the source
-of truth for understanding.** Treat both as one product: a change is not done
-until both are updated.
+## 1. Before coding
 
-## 1. Before you touch code
+1. Read `.project-brain/`: `system-overview.md` → `architecture.md` → the
+   related `flows/` → `data-model.md` (if data changes) → recent
+   `feature-history.md` → related `decisions/`.
+2. If it still has `TODO(vpos)`, run `prompts/understand-project.md` first.
+3. For anything bigger than a small fix, present a plan first
+   (`prompts/before-feature.md`): a before diagram, an after diagram with the
+   changes highlighted, what's affected, and the new failure cases. Wait for
+   approval.
 
-1. Read, in this order:
-   - `.project-brain/system-overview.md`
-   - `.project-brain/architecture.md`
-   - the files in `.project-brain/flows/` that relate to the task
-   - `.project-brain/data-model.md` if the task touches stored data
-   - the latest entries in `.project-brain/feature-history.md`
-   - `.project-brain/decisions/` for decisions in the area you are touching
-2. If `.project-brain/` still contains `TODO(vpos)` placeholders in the files
-   you need, run the bootstrap first (`.project-brain/prompts/understand-project.md`).
-3. For any change bigger than a small fix, **present a plan before coding**,
-   following `.project-brain/prompts/before-feature.md`:
-   - current state (diagram of the part being touched)
-   - proposed change (same diagram, with changes highlighted)
-   - affected components, data and flows
-   - new failure cases and how they are handled
-   - open questions
+## 2. While coding
 
-   Wait for approval when the user is in the loop.
+- Existing code conventions win over these rules.
+- Say so if you drift from the approved plan.
+- Hard-to-reverse choice (dependency, service, storage, schema, auth, a
+  pattern others must follow)? Write an ADR in `decisions/`.
 
-## 2. While you work
+## 3. Definition of Done
 
-- Follow existing code conventions over anything written here.
-- If the implementation drifts from the approved plan, say so and explain why.
-- If you make a choice that is hard to reverse (new dependency, new service,
-  new storage, schema change, auth change, a pattern others must follow), it
-  needs an ADR in `.project-brain/decisions/`.
+- [ ] Code works; checks and tests pass.
+- [ ] `features/YYYY-MM-DD-<slug>.md` written from `features/_template.md`.
+- [ ] One line added at the top of `feature-history.md`.
+- [ ] Every brain file whose truth changed is updated, diagrams included.
+- [ ] ADR added if a decision was made.
+- [ ] Your reply ends with the record's change summary.
 
-## 3. After the change — Definition of Done
+Small fixes only need the `feature-history.md` line.
 
-Follow `.project-brain/prompts/after-feature.md`. A change is done only when:
+## 4. Writing budget: diagrams first, words last
 
-- [ ] Code works and existing checks/tests pass.
-- [ ] A feature record exists: `.project-brain/features/YYYY-MM-DD-<slug>.md`
-      (copy `features/_template.md`), with change summary, files touched,
-      impact map, edge cases and test notes.
-- [ ] One line was added at the top of `.project-brain/feature-history.md`.
-- [ ] Every doc whose truth changed was updated:
-      `architecture.md`, `data-model.md`, `integrations.md`, `deployment.md`,
-      `system-overview.md`, and any affected `flows/*.md`.
-- [ ] Diagrams match the code (component names, tables, columns, calls).
-- [ ] An ADR was added if a decision was made (see section 2).
-- [ ] You ended your reply with the change summary from the feature record.
+The brain is read by busy people. Say it with a diagram and a short table.
+Use prose only for what a diagram can't show.
 
-Small fixes (typos, one-line bug fixes with no behaviour change to document)
-only need a line in `feature-history.md`.
+| Rule | Limit |
+| --- | --- |
+| Opening paragraph of a file | ≤ 3 sentences |
+| Bullet or table cell | ≤ 12 words, no full sentences needed |
+| Table | ≤ 8 rows; split or link out if longer |
+| Bullet list | ≤ 6 items |
+| Flow steps | ≤ 5, one line each |
+| Diagram | ≤ 15 nodes; split by level if bigger |
+| Whole file | fits on ~2 screens |
 
-## 4. How to write the brain
+- Real names only (files, functions, tables, env vars) so people can grep them.
+  Mark guesses `(unverified)`.
+- Rewrite outdated sections. Never append "Update:" notes; history goes in
+  `features/` and `decisions/`.
+- Never write secrets or customer data. Name the setting instead.
+- Link to code paths; don't paste code.
 
-- **Short and current beats long and stale.** Rewrite sections; don't append
-  "update:" paragraphs. History belongs in `features/` and `decisions/`.
-- **Real names only.** Use actual file, function, table, column, env var and
-  endpoint names so readers can grep for them. Never invent.
-- **Mark uncertainty** with `(unverified)` instead of guessing.
-- **Never write secrets** (keys, tokens, passwords, customer data). Name the
-  env var or setting instead.
-- **Link, don't duplicate.** Point to code paths (`src/billing/invoice.ts`)
-  rather than pasting code.
+## 5. Diagrams (Mermaid, inside the Markdown)
 
-## 5. Diagram conventions (Mermaid)
+| Use | Type |
+| --- | --- |
+| Context, containers, impact maps | `flowchart` |
+| Flows | `sequenceDiagram` |
+| Data | `erDiagram` |
+| Lifecycles | `stateDiagram-v2` |
 
-- Diagrams live inside the Markdown files in ```` ```mermaid ```` blocks, so they
-  render on GitHub, GitLab and in most editors with no extra tooling.
-- One idea per diagram, **max ~15 nodes**. Split big diagrams by level:
-  system context → containers → one flow.
-- Diagram types:
-  - system context / containers / impact maps → `flowchart`
-  - request and user flows → `sequenceDiagram`
-  - stored data → `erDiagram`
-  - lifecycles (order status, job state) → `stateDiagram-v2`
-- Impact maps use these classes so readers can see what changed:
+- Impact maps mark changes with these classes:
 
   ```
   classDef added fill:#d3f9d8,stroke:#2b8a3e,color:#1b4332
@@ -88,25 +73,21 @@ only need a line in `feature-history.md`.
   classDef removed fill:#ffe3e3,stroke:#c92a2a,color:#5c1a1a,stroke-dasharray:4 3
   ```
 
-- Node IDs are short and stable (`api`, `db`, `worker`); labels carry the real
-  name: `api["api-server (src/server.ts)"]`.
-- Keep labels free of characters that break Mermaid (`"`, `;`, unbalanced
-  brackets). Quote labels that contain `()`, `/`, `:` or spaces.
-- Never use `end`, `style`, `class`, `click` or `subgraph` as node IDs; they
-  are Mermaid keywords and break the diagram.
+- Short IDs, real names in labels: `api["api-server (src/server.ts)"]`.
+- Quote labels that contain `( ) / :` or spaces. No `"` or `;` inside labels.
+- Never use `end`, `style`, `class`, `click` or `subgraph` as node IDs.
 
-## 6. Map of `.project-brain/`
+## 6. Map
 
 | File | Answers |
 | --- | --- |
-| `system-overview.md` | What is this, who uses it, what does it talk to? |
+| `system-overview.md` | What is it, who uses it, what does it talk to? |
 | `architecture.md` | What are the parts and how do they connect? |
-| `flows/*.md` | What happens, step by step, when X occurs? |
-| `data-model.md` | What is stored, where, and how is it related? |
-| `integrations.md` | Which external services, how, and what if they fail? |
-| `deployment.md` | How is it built, configured, run and released? |
-| `feature-history.md` | What changed, when, and where is the record? |
-| `features/` | The full story of each change: before, after, impact. |
-| `decisions/` | Why is it built this way? (ADRs) |
-| `prompts/` | Reusable prompts for agents and humans. |
+| `flows/` | What happens, step by step? |
+| `data-model.md` | What is stored and how is it related? |
+| `integrations.md` | Which external services, and what if they fail? |
+| `deployment.md` | How is it run and released? |
+| `feature-history.md` | What changed, and when? |
+| `features/` | Before, after and impact of each change |
+| `decisions/` | Why is it built this way? |
 <!-- visual-project-os:end -->

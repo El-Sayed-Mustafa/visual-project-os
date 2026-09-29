@@ -9,16 +9,15 @@
 
 ## Change summary
 
-- Clicking a navigation card sometimes replaced the whole app with a blank page.
-- Cause: `<a href="#" data-goto>` links inside Apps Script's sandbox iframe (`<base target="_top">`). If boot failed before handlers were wired, the click navigated the **top** window to an internal OAuth dialog URL.
-- Fix: capture-phase `preventDefault` on `[data-goto]` registered before any server call, `try/catch` around boot with a visible error screen, an idempotent wiring guard, and a consent helper `authorizeCrmServices`.
-- Rule since then: share only the `/exec` link, never `/dev`.
+- Nav-card clicks sometimes blanked the whole app.
+- Cause: `<a href="#" data-goto>` in sandbox iframe (`<base target="_top">`) before boot wired handlers.
+- Fix: early capture-phase `preventDefault`, boot `try/catch` + error screen, consent helper.
+- Rule since: share only `/exec`, never `/dev`.
 
 ## Problem
 
-Office users saw a white screen after the v1→v2 scope additions (Calendar,
-Mail, Drive) when OAuth consent was incomplete, or when they opened the `/dev`
-test deployment.
+After the v1→v2 scope additions (Calendar, Mail, Drive), incomplete OAuth consent
+or the `/dev` link made boot fail, and a click sent the top window to an OAuth URL.
 
 ## Before
 
@@ -49,7 +48,7 @@ flowchart LR
 | File | Change |
 | --- | --- |
 | `Script.html` | changed: early `[data-goto]` guard, try/catch boot, `chromeWired_` guard |
-| `Index.html` | changed: `onclick="return false"` on anchors (later replaced by `<button type="button" data-goto>`) |
+| `Index.html` | changed: anchors → later `<button type="button" data-goto>` |
 | `Localization.html` | changed: startup error strings |
 | `Authorization.js` | added: `authorizeCrmServices`, `authorizeGreenApiAccess` |
 | `appsscript.json` | unchanged scopes (same as v2) |
@@ -62,14 +61,13 @@ None.
 
 | Case | Behaviour |
 | --- | --- |
-| Boot throws | Visible error with the message instead of a blank page |
-| Consent missing | An admin runs `authorizeCrmServices` once in the editor |
-| Another boot-stopper: `//` inside a regex (a later release, 2026-09-14) | Same symptom, different cause. Now a standing rule in [architecture.md](../architecture.md) |
+| Boot throws | Visible error message instead of blank page |
+| Consent missing | Admin runs `authorizeCrmServices` once in the editor |
+| `//` inside a regex (2026-09-14 release) | Same symptom, other cause; rule in [architecture.md](../architecture.md) |
 
 ## Test notes
 
-Redeployed as a new version and tested through the `/exec` link, following the
-fix guide shipped with the v5 release.
+New version redeployed and tested via `/exec`, per the v5 fix guide.
 
 ## Brain docs updated
 

@@ -8,32 +8,28 @@
 
 ## Context
 
-Even with Postgres behind it, every `google.script.run` call pays the Apps
-Script cold-start and round-trip cost (often seconds). Office staff book and
-search all day, so latency is the main complaint.
+Even with Postgres, every `google.script.run` call pays Apps Script cold-start
+and round-trip cost, often seconds. Office staff book and search all day, so
+latency is the main complaint.
 
 ## Decision
 
-The browser calls a Supabase Edge Function (**supabase/functions/crm-api/index.ts**)
-directly for functions listed in `DIRECT_SUPABASE_FUNCTIONS` /
-`DIRECT_SUPABASE_MUTATIONS`. The Edge verifies the HMAC token, applies the same
-role allow-lists, runs the business logic in TypeScript, and queues Google side
-effects in `crm_sync_outbox` for the Apps Script worker. **Reads** fall back to
-Apps Script. **Writes never fall back**, so a write can't run twice through two
-implementations.
+The browser calls **supabase/functions/crm-api/index.ts** directly for
+`DIRECT_SUPABASE_FUNCTIONS` / `DIRECT_SUPABASE_MUTATIONS`; it verifies the HMAC
+token, applies role allow-lists, runs the logic and queues side effects in
+`crm_sync_outbox`. Reads fall back to Apps Script; **writes never fall back**,
+so no write runs twice through two implementations.
 
 ## Alternatives considered
 
-| Option | Pros | Cons | Why not |
-| --- | --- | --- | --- |
-| Apps Script only | One implementation | Slow | The reason for this ADR |
-| Supabase client in browser with RLS | No server code | Business rules and roles in the browser | Unsafe for money and roles |
-| Separate Node server | Full control | Hosting, ops | Too heavy for this team |
+| Option | Pros | Cons / why not |
+| --- | --- | --- |
+| Apps Script only | One implementation | Slow — the reason for this ADR |
+| Browser Supabase client + RLS | No server code | Rules and roles in browser; unsafe for money |
+| Separate Node server | Full control | Hosting and ops too heavy for team |
 
 ## Consequences
 
-- **Good:** fast UI; Google side effects are async and retryable.
-- **Bad:** business logic exists twice (TS and Apps Script). Changes must update
-  both or delete one on purpose.
-- **Follow-ups:** move multi-step writes into RPC transactions; add unique
-  constraints.
+- **Good:** fast UI; Google side effects async and retryable.
+- **Bad:** logic exists twice (TS + Apps Script); update both or delete one.
+- **Follow-ups:** multi-step writes into RPC transactions; add unique constraints.

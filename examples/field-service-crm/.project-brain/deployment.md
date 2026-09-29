@@ -4,15 +4,14 @@
 
 ## Environments
 
-| Environment | Where it runs | URL / identifier | How it is released |
+| Environment | Where | Identifier | Release |
 | --- | --- | --- | --- |
 | Local | this folder (clasp `rootDir`) | `.clasp.json` | `clasp push` |
-| Production — Apps Script | Google, bound to the CRM spreadsheet | one **pinned** deployment id (kept out of the docs) serving `/exec` and `/exec?portal=technician` | `clasp deploy --deploymentId <pinned>` |
-| Production — Edge | Supabase project | `crm-api`, `call-log` | `supabase functions deploy` |
-| Production — DB | Supabase Postgres | — | hand-applied SQL via the migration runner script |
+| Prod — Apps Script | Google, bound to CRM spreadsheet | one **pinned** id: `/exec`, `/exec?portal=technician` | `clasp deploy --deploymentId <pinned>` |
+| Prod — Edge | Supabase | `crm-api`, `call-log` | `supabase functions deploy` |
+| Prod — DB | Supabase Postgres | — | Hand-applied SQL via migration runner |
 
-There is no staging environment. `/dev` (the test deployment) must never be
-shared; it caused the v5 white screen.
+No staging. Never share `/dev` (caused the v5 white screen).
 
 ## Build and run
 
@@ -24,8 +23,7 @@ npx supabase functions deploy crm-api --project-ref <ref>
 npx clasp push -f
 npx clasp deploy --deploymentId <pinned-id> --description "<what changed>"
 
-# 3. Migrations — one file at a time with the migration runner script,
-#    never `supabase db push`
+# 3. Migrations — one file at a time, never `supabase db push`
 <migration-runner> supabase/migrations/0NN_<name>.sql
 ```
 
@@ -45,30 +43,29 @@ flowchart LR
 
 ## Configuration
 
-| Setting | Where it is set | Required | Notes |
+| Setting | Where | Notes |
+| --- | --- | --- |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Script Properties | Required; Apps Script → Postgres |
+| `GREEN_API_INSTANCE_ID`, `GREEN_API_TOKEN` | Script Properties | Required; WhatsApp pull |
+| `CRM_EDGE_SECRET` | Supabase function secrets | Required; Edge token signing |
+| `CONFIG.*` flags | `Config.js` | `SUPABASE_PRIMARY_DATABASE`, `FAST_API_ENABLED`, `SEND_TECHNICIAN_EMAILS`, `MAX_UPLOAD_MB`… |
+| Manifest | `appsscript.json` | Identity, access, scopes; time zone = `CONFIG.TIME_ZONE` |
+
+## Triggers (from code, unverified against live)
+
+| Job | Every | Entry point | Does |
 | --- | --- | --- | --- |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Script Properties | yes | Apps Script → Postgres |
-| `GREEN_API_INSTANCE_ID`, `GREEN_API_TOKEN` | Script Properties | yes | WhatsApp pull |
-| `CRM_EDGE_SECRET` | Supabase function secrets | yes | Token signing secret for the Edge |
-| `CONFIG.*` flags | `Config.js` | — | `SUPABASE_PRIMARY_DATABASE`, `FAST_API_ENABLED`, `SEND_TECHNICIAN_EMAILS`, `CREATE_CALENDAR_EVENTS`, `MAX_UPLOAD_MB`… |
-| Manifest | `appsscript.json` | yes | Execution identity, web-app access, time zone and OAuth scopes. Keep its time zone in line with `CONFIG.TIME_ZONE` |
-
-## Scheduled jobs and triggers
-
-The installed trigger set can only be seen in the Apps Script editor. These are
-the triggers defined in code (unverified against live).
-
-| Job | Schedule | Entry point | What it does |
-| --- | --- | --- | --- |
-| Deferred worker | every 1 min | `processDeferredCrmMaintenance` | Drains `crm_sync_outbox`: emails, contacts queue, identity jobs |
-| WhatsApp pull | every 10 min | `pullGreenApiLeadsOnSchedule` | Imports chats into `crm_leads` |
-| Recordings sync | every 30 min | `syncCallRecordingsOnSchedule` | Links Drive recordings to calls |
-| Contacts sync | every 1 min (admin account) | `syncPaidVisitContacts` | People API upserts |
-| Sheet backup | every 1 min, only if set up | `processSupabaseSheetBackups` | Disabled (backups off) |
+| Deferred worker | 1 min | `processDeferredCrmMaintenance` | Drains `crm_sync_outbox`: emails, contacts, identity jobs |
+| WhatsApp pull | 10 min | `pullGreenApiLeadsOnSchedule` | Chats → `crm_leads` |
+| Recordings sync | 30 min | `syncCallRecordingsOnSchedule` | Links Drive recordings to calls |
+| Contacts sync | 1 min (admin account) | `syncPaidVisitContacts` | People API upserts |
+| Sheet backup | 1 min, if set up | `processSupabaseSheetBackups` | Disabled (backups off) |
 | Spreadsheet menu | on open | `onOpen` | "CRM" menu |
 
 ## Rollback
 
-- Apps Script: redeploy the pinned id with an older `--versionNumber`.
-- Edge: redeploy the previous `index.ts` from git.
-- DB: run the migration's "TO UNDO" block.
+| Part | How |
+| --- | --- |
+| Apps Script | Redeploy pinned id with older `--versionNumber` |
+| Edge | Redeploy previous `index.ts` from git |
+| DB | Run the migration's "TO UNDO" block |

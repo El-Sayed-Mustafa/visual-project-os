@@ -1,8 +1,8 @@
 # Flow: office sign-in
 
-**Trigger:** an office user opens `/exec`.
-**Outcome:** the browser holds a signed office token; every later call carries it.
-**Entry point:** `Webapp.js` → `doGet`; Edge `crm-api` → `officeLogin`
+**Trigger:** office user opens `/exec`.
+**Outcome:** browser holds a signed office token, sent on every call.
+**Entry:** `Webapp.js` → `doGet`; Edge `crm-api` → `officeLogin`
 
 ```mermaid
 sequenceDiagram
@@ -28,21 +28,17 @@ sequenceDiagram
 
 ## Steps
 
-1. `doGet` serves `Index.html` with the bootstrap JSON inlined.
-2. The SPA lists accounts (`officeLoginOptions`) and signs in (`officeLogin`).
-   Failed passwords are delayed 900 ms.
-3. The token payload is `{scope:'office', uid, sv, name, role, pages, exp}`.
-4. On every call the Edge (or `Auth.js` → `officeApi` on the fallback path)
-   re-checks the session version. Stopping an account or changing its password
-   ends its sessions within seconds.
-5. `officeAllows` / `officeAllows_` check the function against the role and the
-   account's `pages[]`. `OFFICE_BLOCKED_FNS_` are never callable.
+1. `doGet` serves `Index.html` with bootstrap JSON inlined.
+2. SPA lists accounts (`officeLoginOptions`), signs in (`officeLogin`); failures delayed 900 ms.
+3. Token payload: `{scope:'office', uid, sv, name, role, pages, exp}`.
+4. Every call re-checks session version (Edge or `officeApi`); revocation within seconds.
+5. `officeAllows` / `officeAllows_` check role + `pages[]`; `OFFICE_BLOCKED_FNS_` never callable.
 
 ## Failure cases
 
-| Where | What can fail | What happens |
-| --- | --- | --- |
-| Edge down | Login call fails | Fallback `officeLogin` via `google.script.run` |
-| Boot script error | SPA never wires handlers | `renderStartupError_()` shows the error instead of a white page (v5 fix) |
-| `//` inside a regex in served code | HtmlService strips the rest of the line | Page never boots (a later white-screen incident). Rule in [architecture.md](../architecture.md) |
-| Account stopped or password changed | `session_version` no longer matches | Existing tokens are rejected; user must sign in again |
+| Where | What happens |
+| --- | --- |
+| Edge down | Fallback `officeLogin` via `google.script.run` |
+| Boot script error | `renderStartupError_()` shows error, not white page (v5 fix) |
+| `//` inside a regex in served code | Page never boots; rule in [architecture.md](../architecture.md) |
+| Account stopped or password changed | `session_version` mismatch; user signs in again |

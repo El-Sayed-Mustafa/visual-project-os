@@ -4,46 +4,34 @@
 
 ## Containers
 
-<!-- The deployable / runnable parts (apps, services, workers, databases,
-     queues, scheduled jobs) and how they talk. Real names in labels. -->
-
 ```mermaid
 flowchart TB
-  subgraph sys["{{PROJECT_NAME}}"]
-    ui["UI"]
-    api["Backend"]
-    db[("Database")]
-  end
-  user(["User"]) --> ui
-  ui -- "HTTP / RPC" --> api
-  api -- "read / write" --> db
+  user(["User"]) --> ui["UI"]
+  ui -- "HTTP" --> api["Backend"]
+  api --> db[("Database")]
 ```
 
 ## Components
 
-| Component | Path | Responsibility | Depends on |
-| --- | --- | --- | --- |
-| TODO(vpos) | `path/` | TODO(vpos) | TODO(vpos) |
-
-## Cross-cutting concerns
-
-| Concern | How it is handled | Where |
+| Component | Path | Job |
 | --- | --- | --- |
-| Auth / permissions | TODO(vpos) | |
-| Configuration & secrets | TODO(vpos) | |
+| TODO(vpos) | `path/` | |
+
+## Cross-cutting
+
+| Concern | How | Where |
+| --- | --- | --- |
+| Auth | TODO(vpos) | |
+| Config & secrets | TODO(vpos) | |
 | Errors & retries | TODO(vpos) | |
-| Logging / monitoring | TODO(vpos) | |
 | Tests | TODO(vpos) | |
 
-## Rules of the codebase
+## Rules
 
-<!-- Conventions an agent must respect, e.g. "all sheet access goes through
-     db.js", "never call the payment API from the UI". -->
+- TODO(vpos): conventions agents must respect (one line each)
 
-- TODO(vpos)
+## Risks
 
-## Known risks and tech debt
-
-| Risk | Impact | Mitigation / plan |
+| Risk | Impact | Plan |
 | --- | --- | --- |
 | TODO(vpos) | | |

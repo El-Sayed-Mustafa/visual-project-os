@@ -8,32 +8,26 @@
 
 ## Context
 
-v1–v5 stored everything in the bound Google Sheet. With thousands of customers,
-appointments and reports imported, `readTable_` full-sheet reads, ScriptLock
-contention and Apps Script latency made the app slow. The data also needed real
-relations, constraints and money triggers.
+v1–v5 stored everything in the bound Google Sheet. After importing thousands of
+rows, full-sheet `readTable_` reads, ScriptLock contention and Apps Script latency
+made the app slow. Data also needed relations, constraints and money triggers.
 
 ## Decision
 
-Move operational data to Supabase Postgres (`crm_*` tables). Keep the
-Sheets-shaped code by routing `readTable_` / `appendRows_` / `updateRow_`
-through an adapter (`SupabasePrimary.js`). The cutover is staged by per-domain
-`CONFIG.SUPABASE_*` flags with parity tests (`compare*Sources`). After cutover,
-set `SUPABASE_PRIMARY_DATABASE: true` and freeze Sheets
-(`SHEETS_BACKUP_ENABLED: false`).
+Move operational data to Postgres (`crm_*`), keeping Sheets-shaped helpers via
+the `SupabasePrimary.js` adapter. Cut over per domain with `CONFIG.SUPABASE_*`
+flags and `compare*Sources` parity tests, then set `SUPABASE_PRIMARY_DATABASE: true` and `SHEETS_BACKUP_ENABLED: false`.
 
 ## Alternatives considered
 
-| Option | Pros | Cons | Why not |
-| --- | --- | --- | --- |
-| Stay on Sheets, optimise reads | No migration | Hits limits again as data grows; no constraints | Didn't fix the root cause |
-| Firebase / Firestore | Google ecosystem | No SQL, weak reporting for money | Reporting and joins matter |
-| Keep dual-write forever | Safe fallback | Two sources of truth drift | Temporary only |
+| Option | Pros | Cons / why not |
+| --- | --- | --- |
+| Stay on Sheets, optimise reads | No migration | Limits return as data grows; no constraints |
+| Firebase / Firestore | Google ecosystem | No SQL; weak money reporting and joins |
+| Dual-write forever | Safe fallback | Two sources of truth drift; temporary only |
 
 ## Consequences
 
-- **Good:** fast queries, RPCs for dashboards, triggers for the cash book, RLS.
-- **Bad:** adapter layer and dead Sheets branches remain. Migrations are applied
-  by hand with an empty history table.
-- **Follow-ups:** delete dead Sheets code; start migration history properly
-  (tracked in the project's migration master plan).
+- **Good:** fast queries, dashboard RPCs, cash-book triggers, RLS.
+- **Bad:** adapter + dead Sheets branches remain; hand-applied migrations, empty history.
+- **Follow-ups:** delete dead Sheets code; start proper migration history.

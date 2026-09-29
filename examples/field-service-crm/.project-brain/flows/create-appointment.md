@@ -1,8 +1,8 @@
 # Flow: create appointment
 
 **Trigger:** office user submits the booking form (`page-book`).
-**Outcome:** a `crm_appointments` row exists, and the technician gets an email within about a minute.
-**Entry point:** `Script.html` → `call('createAppointment', form)` → Edge `crm-api` → `dispatch`
+**Outcome:** `crm_appointments` row saved; technician emailed within ~1 min.
+**Entry:** `Script.html` → `call('createAppointment', form)` → Edge `crm-api` → `dispatch`
 
 ```mermaid
 sequenceDiagram
@@ -32,21 +32,17 @@ sequenceDiagram
 
 ## Steps
 
-1. Reserve an ID with `crm_reserve_ids`.
-2. Validate: end after start, no same-customer booking that day, no technician
-   time overlap (`lt start / gt end`).
-3. Resolve the visit address against the customer's five address slots.
-4. Insert the appointment, then update the customer's addresses.
-5. Mark the lead or call task as "became customer".
-6. Enqueue `appointment_created`. The 1-minute worker sends the technician email
-   (Calendar invites are off).
+1. Reserve ID via `crm_reserve_ids`.
+2. Validate: end after start, no same-day customer duplicate, no technician overlap.
+3. Match address to customer's five slots; insert appointment; update addresses.
+4. Mark lead / call task "became customer".
+5. Enqueue `appointment_created`; worker emails technician (Calendar off).
 
 ## Failure cases
 
-| Where | What can fail | What happens |
-| --- | --- | --- |
-| Two users book the same slot at once | Check-then-insert race; no exclusion constraint | Double booking possible (open risk) |
-| `day_order = count + 1` | Concurrent inserts | Duplicate day order |
-| Insert ok, address patch fails | No transaction | Appointment saved, addresses stale |
-| Edge down | Writes never fall back | Booking fails with an error |
-| MailApp quota / worker stopped | Outbox job stays pending | Technician not notified |
+| Where | What happens |
+| --- | --- |
+| Concurrent booking, no exclusion constraint | Double booking or duplicate `day_order` (open risk) |
+| Address patch fails after insert (no transaction) | Appointment saved, addresses stale |
+| Edge down | Writes never fall back; booking fails with error |
+| MailApp quota / worker stopped | Outbox job pending; technician not notified |

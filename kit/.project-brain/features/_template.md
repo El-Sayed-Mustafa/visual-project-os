@@ -9,18 +9,9 @@
 
 ## Change summary
 
-<!-- 3–5 bullets a busy person can read in 20 seconds. What changed and why. -->
-
--
-
-## Problem
-
-What was wrong or missing, and for whom.
+- (≤ 4 bullets: what changed and why)
 
 ## Before
-
-<!-- The relevant slice of the system before the change. Copy the relevant
-     part of architecture.md or a flow and trim it. -->
 
 ```mermaid
 flowchart LR
@@ -28,9 +19,6 @@ flowchart LR
 ```
 
 ## After — impact map
-
-<!-- Same slice after the change. Mark nodes with the classes below.
-     Untouched nodes keep the default style. -->
 
 ```mermaid
 flowchart LR
@@ -43,7 +31,7 @@ flowchart LR
 
 ## Flow
 
-<!-- The new or changed runtime behaviour. Delete if nothing flows. -->
+<!-- Delete if nothing new flows at runtime. -->
 
 ```mermaid
 sequenceDiagram
@@ -53,34 +41,18 @@ sequenceDiagram
   U->>A: action
   A->>C: new call
   C-->>A: result
-  A-->>U: response
 ```
 
-## Files touched
+## Files
 
 | File | Change |
 | --- | --- |
-| `path/to/file` | added / changed / removed — what and why |
+| `path/to/file` | |
 
-## Data impact
+## Risks and tests
 
-New or changed tables, columns, files, env vars, or "none".
-
-## Edge cases and failure modes
-
-| Case | Behaviour |
+| Edge case | Behaviour |
 | --- | --- |
 | | |
 
-## Test notes
-
-How it was verified (tests, manual steps, data used) and what is not covered.
-
-## Brain docs updated
-
-- [ ] architecture.md
-- [ ] data-model.md
-- [ ] integrations.md
-- [ ] deployment.md
-- [ ] flows/
-- [ ] feature-history.md
+**Data impact:** none · **Tested:** how
