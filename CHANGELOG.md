@@ -3,7 +3,6 @@
 ## Unreleased
 
 - `vpos view`: render the brain as one browsable HTML page (sidebar, stats, live Mermaid).
-- `check`: flags Mermaid keywords used as node ids (`end`, `style`, `class`…).
 
 ## 0.1.0 — 2026-09-29
 
