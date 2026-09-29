@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "node --test test/cli.test.mjs",
-    "check:examples": "node bin/vpos.mjs check examples/field-service-crm"
+    "check:examples": "node bin/vpos.mjs check examples/field-service-crm && node bin/vpos.mjs check examples/online-store"
   },
   "engines": {
     "node": ">=18"

@@ -158,6 +158,11 @@ Run it without installing: `npx github:El-Sayed-Mustafa/visual-project-os check`
 
 ## Examples
 
+- [`examples/online-store`](examples/online-store/.project-brain/README.md):
+  **start here.** A typical online store after the request *"Add Stripe
+  payments"*: before/after impact map, checkout flow, feature record, 2 ADRs.
+  Illustrative sample.
+
 The kit was piloted on two real production projects: a field-service CRM and
 a Python data pipeline that runs on a fleet of machines. The CRM's brain is
 published here in anonymized form (code not included):

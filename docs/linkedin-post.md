@@ -2,61 +2,55 @@
 
 ---
 
-AI agents write code faster than I can understand it.
+You asked AI to add Stripe payments to your store.
 
-After a few weeks of building with Claude Code and Codex, I had the same problem
-on every project:
-→ dozens of changes I never really reviewed
-→ no current picture of the architecture
-→ no idea what a change touched until something broke
-→ coming back after two weeks felt like reading a stranger's code
+It worked. The tests pass.
 
-So I built **visual-project-os**: an open-source, living, visual memory for
-AI-built projects.
+But can you say what it changed?
+→ Which files?
+→ Which tables?
+→ What happens now if the webhook fails?
 
-One command adds a `.project-brain/` folder to any repo:
-📐 architecture and system context (Mermaid, renders on GitHub)
-🔁 sequence diagrams for the important flows
-🗄️ data model as an ER diagram
-🧭 decision log (ADRs)
-📜 feature history, with a before/after **impact map** for every change
+AI writes code faster than we can understand it. After a few weeks, your own
+project feels like a stranger's.
 
-The key part is the `AGENTS.md` rules. Before building a feature, the agent has
-to show the current slice of the system and the same slice after the change,
-with new parts in green and changed parts in amber. After building it, the agent
-updates the map. A small CLI and a GitHub Action fail the PR if code changed but
-the brain didn't.
+So I built **visual-project-os**, an open-source "memory" for AI-built projects.
 
-Coming back after a month? `vpos view` turns the whole brain into one page:
-walk through any flow step by step, click a component to trace what it talks
-to, and zoom around the architecture.
+Here's the same request with it installed:
 
-I piloted it on two real production projects: a field-service CRM (Apps Script +
-Supabase + Edge Functions) and a Python data pipeline running on a fleet of
-machines. An anonymized version of the CRM's brain is in the repo, with 4 flows,
-3 ADRs and before/after impact maps.
+1️⃣ **Plan first.** Before writing code, the agent shows you a before/after map
+of the system. New parts are green, changed parts amber, removed parts red.
 
-✅ Free, no SaaS, no account
-✅ Works with Claude Code, Codex, Cursor, Copilot, and any agent that reads AGENTS.md
-✅ Plain Markdown + Mermaid, versioned with your code
+2️⃣ **Walk the flow.** The new checkout becomes a step-by-step diagram you can
+click through: cart → Stripe → webhook → "order paid".
 
-Try it:
+3️⃣ **Leave a record.** A change summary, the files touched, the edge cases and
+the decisions, all saved in the repo.
+
+4️⃣ **Safety net.** If someone changes code without updating the map, the PR
+fails.
+
+It's all plain Markdown + Mermaid inside your repo. No SaaS, no account.
+It works with Claude Code, Codex, Cursor and Copilot.
+
+Try it in 10 seconds:
 npx github:El-Sayed-Mustafa/visual-project-os init
 
-Repo 👉 https://github.com/El-Sayed-Mustafa/visual-project-os
+⭐ https://github.com/El-Sayed-Mustafa/visual-project-os
 
-How do you keep your mental model of a codebase when AI writes most of it?
+How do you keep track of what your AI agent changed?
 
-#AI #SoftwareArchitecture #OpenSource #ClaudeCode #DeveloperTools
+#AI #SoftwareEngineering #OpenSource #ClaudeCode #DeveloperTools
 
 ---
 
-**Visuals:** a 6-slide carousel (1080×1350, PDF for a LinkedIn document post),
-built only from the anonymized example:
+**Visuals:** a 6-slide carousel (1080×1350; upload the PDF as a LinkedIn
+document post). Every visual is built from `examples/online-store`, an
+illustrative sample store:
 
-1. Hook + the 6-step loop + install command
-2. Before / after impact map of a real change
-3. Architecture diagram + brain stats
-4. Real `vpos check` output failing a PR, plus the GitHub Action
-5. The viewer walking through a flow step by step
-6. Folder layout, supported agents, repo link
+1. Hook: "You asked AI to add payments. What did it change?" + impact map
+2. Before / after impact map
+3. The viewer walking through the checkout flow
+4. The feature record
+5. `vpos check` failing a PR (real output)
+6. Install command + repo
