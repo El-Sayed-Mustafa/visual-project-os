@@ -1,0 +1,20 @@
+name: project-brain
+
+# Fails a pull request that changes code without updating .project-brain/,
+# or that breaks diagrams / links in it. Add "[skip brain]" to a commit
+# message to skip the freshness rule for trivial changes.
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npx --yes github:El-Sayed-Mustafa/visual-project-os check --since origin/${{ github.base_ref }}

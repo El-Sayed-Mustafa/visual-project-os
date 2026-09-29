@@ -1,0 +1,38 @@
+{
+  "name": "visual-project-os",
+  "version": "0.1.0",
+  "description": "A living, visual memory for AI-built projects: architecture, flows, data model, decisions and feature history in Markdown + Mermaid, kept current by your coding agents.",
+  "type": "module",
+  "bin": {
+    "vpos": "bin/vpos.mjs",
+    "visual-project-os": "bin/vpos.mjs"
+  },
+  "files": [
+    "bin",
+    "kit",
+    "kit-ci"
+  ],
+  "scripts": {
+    "test": "node --test test/cli.test.mjs",
+    "check:examples": "node bin/vpos.mjs check examples/field-service-crm"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "architecture",
+    "documentation",
+    "mermaid",
+    "adr",
+    "ai-agents",
+    "agents-md",
+    "claude-code",
+    "codex",
+    "living-documentation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/El-Sayed-Mustafa/visual-project-os.git"
+  },
+  "license": "MIT"
+}
