@@ -27,6 +27,10 @@ with new parts in green and changed parts in amber. After building it, the agent
 updates the map. A small CLI and a GitHub Action fail the PR if code changed but
 the brain didn't.
 
+Coming back after a month? `vpos view` turns the whole brain into one page:
+walk through any flow step by step, click a component to trace what it talks
+to, and zoom around the architecture.
+
 I piloted it on two real production projects: a field-service CRM (Apps Script +
 Supabase + Edge Functions) and a Python data pipeline running on a fleet of
 machines. An anonymized version of the CRM's brain is in the repo, with 4 flows,
@@ -47,7 +51,12 @@ How do you keep your mental model of a codebase when AI writes most of it?
 
 ---
 
-**Visuals to attach (in order):**
-1. Screenshot: a before/after impact map from a feature record in the pest-control example
-2. Screenshot: the `architecture.md` container diagram rendered on GitHub
-3. Short GIF: `vpos init` → agent runs `understand-project` → `vpos check` output
+**Visuals:** a 6-slide carousel (1080×1350, PDF for a LinkedIn document post),
+built only from the anonymized example:
+
+1. Hook + the 6-step loop + install command
+2. Before / after impact map of a real change
+3. Architecture diagram + brain stats
+4. Real `vpos check` output failing a PR, plus the GitHub Action
+5. The viewer walking through a flow step by step
+6. Folder layout, supported agents, repo link
